@@ -230,7 +230,6 @@ const NeonText: React.FC<NeonTextProps> = ({ text, fontClass, color }) => {
             color: neon.tubeColor,
             textShadow: neon.textShadow,
             filter: `${neon.filter} brightness(1.05)`,
-            boxShadow: neon.boxShadow,
           }}
         >
           {line}
