@@ -2,5 +2,9 @@
 import './globals.css';
 
 export default function Root({ children }: { children: React.ReactNode }) {
-  return <>{children}</>; // Immediately handled by middleware redirecting to /en or /lt
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  ); // Immediately handled by middleware redirecting to /en or /lt
 }
