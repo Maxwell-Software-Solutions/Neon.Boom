@@ -18,8 +18,10 @@ const geistMono = Geist_Mono({
 
 // Using loose typing due to Next.js inference issues; acceptable for layout wrapper
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function LangLayout(props: any) {
-  const { children, params } = (props as { children: React.ReactNode; params?: { lang?: string } }) || {};
+export default async function LangLayout(props: any) {
+  const { children, params: paramsPromise } =
+    (props as { children: React.ReactNode; params?: Promise<{ lang?: string }> }) || {};
+  const params = paramsPromise ? await paramsPromise : {};
   const seg = params?.lang;
   const lang: Locale = isSupportedLocale(seg) ? (seg as Locale) : DEFAULT_LOCALE;
   return (
