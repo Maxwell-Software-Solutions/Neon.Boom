@@ -1,12 +1,82 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 
 // Gallery images now expected directly under /public (root). Move files from /public/gallery to /public.
 const GALLERY_IMAGES = ['IMG_1.jpg', 'IMG_2.jpg', 'IMG_3.jpg', 'IMG_4.jpg', 'IMG_5.jpg', 'IMG_6.jpg'];
 
+const baseFadeClasses = 'transition-all duration-[1200ms] ease-out will-change-transform';
+
 export default function Home() {
+  const heroContentRef = useRef<HTMLDivElement | null>(null);
+  const featuresContentRef = useRef<HTMLDivElement | null>(null);
+  const galleryContentRef = useRef<HTMLDivElement | null>(null);
+  const pricingContentRef = useRef<HTMLDivElement | null>(null);
+  const contactContentRef = useRef<HTMLDivElement | null>(null);
+
+  const fadeRefs = [
+    { key: 'hero', ref: heroContentRef },
+    { key: 'features', ref: featuresContentRef },
+    { key: 'gallery', ref: galleryContentRef },
+    { key: 'pricing', ref: pricingContentRef },
+    { key: 'contact', ref: contactContentRef },
+  ] as const;
+
+  type FadeKey = (typeof fadeRefs)[number]['key'];
+
+  const [visible, setVisible] = useState<Record<FadeKey, boolean>>({
+    hero: false,
+    features: false,
+    gallery: false,
+    pricing: false,
+    contact: false,
+  });
+
+  const visibilityRef = useRef(visible);
+
+  useEffect(() => {
+    visibilityRef.current = visible;
+  }, [visible]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const key = entry.target.getAttribute('data-fade-key') as FadeKey | null;
+          if (!key || visibilityRef.current[key]) return;
+          if (entry.isIntersecting) {
+            visibilityRef.current = { ...visibilityRef.current, [key]: true };
+            setVisible((prev) => ({ ...prev, [key]: true }));
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.25, rootMargin: '0px 0px -10% 0px' }
+    );
+
+    const elements: Array<{ key: FadeKey; el: HTMLElement }> = [];
+    fadeRefs.forEach(({ key, ref }) => {
+      if (ref.current) {
+        ref.current.setAttribute('data-fade-key', key);
+        elements.push({ key, el: ref.current });
+        observer.observe(ref.current);
+      }
+    });
+
+    return () => {
+      elements.forEach(({ el }) => observer.unobserve(el));
+      observer.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fadeClass = (key: FadeKey) =>
+    `${baseFadeClasses} ${visible[key] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`;
+
   return (
     <div className="flex flex-col min-h-screen bg-neutral-950 text-white">
       <SiteHeader />
@@ -17,15 +87,20 @@ export default function Home() {
           <Image src="/room.jpg" alt="Ambient interior background" fill priority className="object-cover opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-b from-neutral-950/40 via-neutral-950/80 to-neutral-950" />
         </div>
-        <div className="max-w-7xl mx-auto px-6 pt-24 pb-32 flex flex-col items-center text-center">
+        <div
+          ref={heroContentRef}
+          className={`${fadeClass(
+            'hero'
+          )} max-w-6xl mx-auto px-6 pt-28 pb-40 flex flex-col items-center text-center gap-6`}
+        >
           <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight max-w-4xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-teal-100 to-cyan-300 drop-shadow-[0_0_25px_rgba(56,244,255,0.35)]">
             Custom Neon Signs That Make Your Brand Glow
           </h1>
-          <p className="mt-6 max-w-2xl text-base sm:text-lg text-neutral-300">
+          <p className="max-w-2xl text-base sm:text-lg text-neutral-300 leading-relaxed">
             Design luminous statements in seconds. Premium LED neon aesthetics, instant text + font preview, and
             production‑ready output. Built for creators, venues, and brands that want unforgettable ambience.
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-4">
             <Link
               href="/neon"
               className="px-8 py-3 rounded-full bg-cyan-400 text-neutral-900 font-semibold text-sm sm:text-base shadow-[0_0_25px_-5px_#22d3ee] hover:shadow-[0_0_35px_-2px_#22d3ee] transition-shadow"
@@ -43,10 +118,10 @@ export default function Home() {
       </section>
 
       {/* Feature Grid */}
-      <section id="features" className="py-28 bg-gradient-to-b from-neutral-950 to-neutral-900/40">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-2xl sm:text-4xl font-semibold mb-14 tracking-tight">Why Neon Boomerang</h2>
-          <div className="grid md:grid-cols-3 gap-10">
+      <section id="features" className="py-32 bg-gradient-to-b from-neutral-950 to-neutral-900/40">
+        <div ref={featuresContentRef} className={`${fadeClass('features')} max-w-7xl mx-auto px-6`}>
+          <h2 className="text-2xl sm:text-4xl font-semibold mb-16 tracking-tight">Why Neon Boomerang</h2>
+          <div className="grid md:grid-cols-3 gap-12">
             {[
               {
                 title: 'Instant Preview',
@@ -75,7 +150,7 @@ export default function Home() {
             ].map((f) => (
               <div
                 key={f.title}
-                className="group rounded-xl border border-white/10 bg-neutral-900/40 p-6 backdrop-blur-sm shadow-[0_0_0_1px_rgba(255,255,255,0.02)] hover:shadow-[0_0_25px_-4px_rgba(34,211,238,0.35)] transition-all"
+                className="group rounded-xl border border-white/10 bg-neutral-900/40 p-8 backdrop-blur-sm shadow-[0_0_0_1px_rgba(255,255,255,0.02)] hover:shadow-[0_0_25px_-4px_rgba(34,211,238,0.35)] transition-all"
               >
                 <h3 className="font-semibold mb-2 text-cyan-200 tracking-wide text-sm uppercase">{f.title}</h3>
                 <p className="text-sm text-neutral-300 leading-relaxed">{f.body}</p>
@@ -86,14 +161,16 @@ export default function Home() {
       </section>
 
       {/* Gallery */}
-      <section id="gallery" className="py-24">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-2xl sm:text-4xl font-semibold mb-8 tracking-tight">Showcase</h2>
-          <p className="text-neutral-400 text-sm max-w-2xl mb-10">
-            A glimpse at recent custom neon concepts & installations. Each piece is tailored to brand tone, scale and
-            mounting environment.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section id="gallery" className="py-32">
+        <div ref={galleryContentRef} className={`${fadeClass('gallery')} max-w-7xl mx-auto px-6 flex flex-col gap-8`}>
+          <div className="space-y-6">
+            <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight">Showcase</h2>
+            <p className="text-neutral-400 text-sm max-w-2xl">
+              A glimpse at recent custom neon concepts & installations. Each piece is tailored to brand tone, scale and
+              mounting environment.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {GALLERY_IMAGES.map((name) => (
               <figure
                 key={name}
@@ -116,9 +193,9 @@ export default function Home() {
       </section>
 
       {/* Pricing placeholder */}
-      <section id="pricing" className="py-24 bg-neutral-900/40">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-2xl sm:text-4xl font-semibold mb-10 tracking-tight">Simple Pricing</h2>
+      <section id="pricing" className="py-32 bg-neutral-900/40">
+        <div ref={pricingContentRef} className={`${fadeClass('pricing')} max-w-7xl mx-auto px-6 flex flex-col gap-8`}>
+          <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight">Simple Pricing</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { tier: 'Starter', price: '$149', blurb: 'Small personal neon up to 60cm.' },
@@ -145,10 +222,10 @@ export default function Home() {
       </section>
 
       {/* Contact CTA */}
-      <section id="contact" className="py-28">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-6">Have a concept? Let’s build it.</h2>
-          <p className="text-neutral-300 max-w-2xl mx-auto mb-10">
+      <section id="contact" className="py-32">
+        <div ref={contactContentRef} className={`${fadeClass('contact')} max-w-4xl mx-auto px-6 text-center space-y-8`}>
+          <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight">Have a concept? Let’s build it.</h2>
+          <p className="text-neutral-300 max-w-2xl mx-auto">
             Send us your logo, sketch or phrase. Our team will refine the layout, advise sizing & mounting, and ship a
             brilliant LED neon that lasts.
           </p>
