@@ -1,8 +1,9 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { SiteFooter } from '@/components/SiteFooter';
 import { useI18n } from '@/lib/i18n/provider';
+import { buildNeon } from '@/lib/neon';
 import { Pacifico, Dancing_Script, Great_Vibes, Sacramento, Satisfy, Caveat, Courgette } from 'next/font/google';
 
 const pacifico = Pacifico({ subsets: ['latin'], weight: '400' });
@@ -215,35 +216,8 @@ interface NeonTextProps {
   fontClass: string;
   color: string;
 }
-function buildGlow(hex: string) {
-  const h = hex.replace('#', '');
-  const bigint = parseInt(
-    h.length === 3
-      ? h
-          .split('')
-          .map((ch) => ch + ch)
-          .join('')
-      : h,
-    16
-  );
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  const base = `rgb(${r} ${g} ${b})`;
-  const d1 = `rgba(${r},${g},${b},0.75)`;
-  const d2 = `rgba(${r},${g},${b},0.55)`;
-  const d3 = `rgba(${r},${g},${b},0.35)`;
-  return [
-    `0 0 3px ${base}`,
-    `0 0 6px ${base}`,
-    `0 0 12px ${base}`,
-    `0 0 24px ${d1}`,
-    `0 0 40px ${d1}`,
-    `0 0 60px ${d2}`,
-    `0 0 85px ${d3}`,
-  ].join(', ');
-}
 const NeonText: React.FC<NeonTextProps> = ({ text, fontClass, color }) => {
+  const neon = useMemo(() => buildNeon(color, { size: 1.1, intensity: 1 }), [color]);
   const lines = (text || '').split(/\r?\n/).filter((l, i, arr) => l.length || arr.length === 1);
   if (!text.trim()) return <span className="text-neutral-600 text-5xl font-light">&nbsp;</span>;
   return (
@@ -251,14 +225,23 @@ const NeonText: React.FC<NeonTextProps> = ({ text, fontClass, color }) => {
       {lines.map((line, idx) => (
         <span
           key={idx}
-          className={
-            'mx-auto whitespace-pre-wrap tracking-wide leading-none ' +
-            fontClass +
-            ' text-[clamp(1.6rem,6.5vw,5rem)] font-light'
-          }
-          style={{ color, textShadow: buildGlow(color), filter: 'brightness(1.1)' }}
+          className={`relative mx-auto whitespace-pre-wrap tracking-wide leading-none ${fontClass} text-[clamp(1.6rem,6.5vw,5rem)] font-light inline-block`}
+          style={{
+            color: neon.tubeColor,
+            textShadow: neon.textShadow,
+            filter: `${neon.filter} brightness(1.05)`,
+            boxShadow: neon.boxShadow,
+          }}
         >
           {line}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-[-18px] -z-10"
+            style={{
+              background: `radial-gradient(circle, ${neon.halo(0.25)} 0%, ${neon.halo(0.12)} 38%, transparent 68%)`,
+              filter: 'blur(12px)',
+            }}
+          />
         </span>
       ))}
     </div>
